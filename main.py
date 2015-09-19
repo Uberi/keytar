@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 
-import speech_recognition as sr
+from collections import defaultdict
 
+import speech_recognition as sr
 import pygame
 
-width, height = 800, 600
+width, height = 600, 300
 HOVER_THRESHOLD = 100
 
 # set up the keys array
@@ -17,25 +18,52 @@ for i, letter in enumerate("zxcvbnm"): KEYS[letter] = pygame.Rect(50 * i + 50, 1
 # wip: need a key model that takes into account the path of the swipe, like corners or loops
 
 # load dictionary
-DICTIONARY = set()
-with open("wordlist.txt", "r") as f:
-    for word in f: DICTIONARY.add(word)
+DICTIONARY = defaultdict(list)
+with open("wordlist.txt", "rb") as f:
+    for line in f:
+        word = line.decode("utf-8", errors="replace").rstrip("\r\n")
+        no_dup_word = "".join(letter for i, letter in enumerate(word) if i == 0 or word[i - 1] != letter)
+        DICTIONARY[no_dup_word].append(word)
 
+print(DICTIONARY["test"])
 def callback(recognizer, audio):
     try:
-        print("Google Speech Recognition thinks you said " + recognizer.recognize_google(audio))
+        spoken_result = recognizer.recognize_google(audio, show_all=True)
     except sr.UnknownValueError:
-        print("Google Speech Recognition could not understand audio")
+        pass
     except sr.RequestError:
-        print("Could not request results from Google Speech Recognition service")
+        pass
+    possibilities = [entry["transcript"] for entry in spoken_result["alternative"]]
+    for transcript in possibilities
+
 r = sr.Recognizer()
 m = sr.Microphone()
 with m as source: r.adjust_for_ambient_noise(source) # we only need to calibrate once, before we start listening
 stop_listening = r.listen_in_background(m, callback)
 
+def n_removals(word, k):
+    if k == 0:
+        yield word
+        return
+    if word == "": return
+    yield from n_removals(word[1:], k - 1)
+    for sequence in n_removals(word[1:], k): yield word[0] + sequence
+
+def word_removals(word, depth = 0):
+    """Return all the possible variations of `word` with each letter successively removed, from longest to shortest"""
+    if word == "": return
+    for i in range(len(word)): yield from n_removals(word, i)
+
 current_swipe = []
+current_sentence = []
 def process_swipe(swipe):
-    print(swipe)
+    # `word` is a string of characters with no runs - each character is different from the one before it
+    word = "".join(swipe)
+    result = set()
+    for word_variation in word_removals(word):
+        if word_variation == "test": print("aaaa")
+        if word_variation in DICTIONARY:
+            current_result.extend(DICTIONARY[word_variation])
 
 screen = pygame.display.set_mode((width, height))
 pygame.font.init()
