@@ -6,7 +6,7 @@ import math
 import speech_recognition as sr
 import pygame
 
-width, height = 600, 400
+width, height = 520, 250
 HOVER_THRESHOLD = 100
 
 # set up the keys array
@@ -51,9 +51,9 @@ def callback(recognizer, audio):
 
 r = sr.Recognizer()
 r.dynamic_energy_threshold = False
-r.energy_threshold = 900
+r.energy_threshold = 9000
+r.phrase_threshold = 0.1
 m = sr.Microphone()
-with m as source: r.adjust_for_ambient_noise(source) # we only need to calibrate once, before we start listening
 stop_listening = r.listen_in_background(m, callback)
 
 def n_removals(word, k):
@@ -76,14 +76,18 @@ def process_swipe(swipe):
     # `word` is a string of characters with no runs - each character is different from the one before it
     word = "".join(swipe)
     CURRENT_CHOICES.clear()
-    for word_variation in word_removals(word):
-        if word_variation in DICTIONARY:
-            for real_word, rank in DICTIONARY[word_variation]:
-                CURRENT_CHOICES[real_word] = rank
+    if len(word) == 1: # simple key press
+        CURRENT_CHOICES[word] = 0
+    else:
+        for word_variation in word_removals(word):
+            if word_variation in DICTIONARY:
+                for real_word, rank in DICTIONARY[word_variation]:
+                    CURRENT_CHOICES[real_word] = rank
     best_candidate = max(CURRENT_CHOICES.items(), key=lambda x: len(x[0]) - 0.1 * math.log(x[1] + 1))[0] # arbitrary ranking function that seems to work well
     CURRENT_DISPLAYED = " ".join(CURRENT_DISPLAYED.split() + [best_candidate])
 
 screen = pygame.display.set_mode((width, height))
+pygame.display.set_caption("keytar")
 pygame.font.init()
 keyboard_font = pygame.font.SysFont("monospace", 18)
 display_font = pygame.font.SysFont("monospace", 20)
