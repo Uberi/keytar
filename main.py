@@ -56,17 +56,16 @@ r.phrase_threshold = 0.1
 m = sr.Microphone()
 stop_listening = r.listen_in_background(m, callback)
 
-def n_removals(word, k):
-    if k == 0:
-        yield word
-        return
-    if word == "": return
-    yield from n_removals(word[1:], k - 1)
-    for sequence in n_removals(word[1:], k): yield word[0] + sequence
-
 def word_removals(word, depth = 0):
     """Return all the possible variations of `word` with each letter successively removed, from longest to shortest"""
-    if word == "": return
+    if word == "": return # empty word has only one possible removal
+    def n_removals(word, k):
+        if k == 0:
+            yield word
+            return
+        if word == "": return
+        yield from n_removals(word[1:], k - 1)
+        for sequence in n_removals(word[1:], k): yield word[0] + sequence
     for i in range(len(word)): yield from n_removals(word, i)
 
 current_swipe = []
